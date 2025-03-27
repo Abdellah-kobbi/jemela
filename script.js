@@ -1,75 +1,57 @@
 document.addEventListener("DOMContentLoaded", afficherProduits);
 
-document
-    .querySelector("#formAjoutProduit")
-    .addEventListener("submit", function (e) {
-        e.preventDefault();
+document.querySelector("#formAjoutProduit").addEventListener("submit", function (e) {
+    e.preventDefault();
 
-        let designation = document.querySelector("#designation").value;
-        let prixVente = document.querySelector("#prixVente").value;
-        let prixAchat = document.querySelector("#prixAchat").value;
-        let quantite = document.querySelector("#quantite").value;
-        let file = document.querySelector("#photo").files[0];
-        let index = document.querySelector("#produitIndex").value; // Récupérer l'index
+    let designation = document.querySelector("#designation").value;
+    let prixVente = document.querySelector("#prixVente").value;
+    let prixAchat = document.querySelector("#prixAchat").value;
+    let quantite = document.querySelector("#quantite").value;
+    let file = document.querySelector("#photo").files[0];
+    let index = document.querySelector("#produitIndex").value.trim(); // Supprimer les espaces vides
 
-        if (file) {
-            let reader = new FileReader();
-            reader.onload = function (event) {
-                let photoBase64 = event.target.result;
-                enregistrerProduit(
-                    designation,
-                    photoBase64,
-                    prixVente,
-                    prixAchat,
-                    quantite,
-                    index
-                );
-            };
-            reader.readAsDataURL(file);
-        } else {
-            let produits = JSON.parse(localStorage.getItem("produits")) || [];
-            let photoExistante = index !== "" ? produits[index].photo : "";
-            enregistrerProduit(
+    console.log("Index récupéré :", index);
+
+    if (file) {
+        let reader = new FileReader();
+        reader.onload = function (event) {
+            let photoBase64 = event.target.result;
+            enregistrerProduit(designation, photoBase64, prixVente, prixAchat, quantite, index);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        let produits = JSON.parse(localStorage.getItem("produits")) || [];
+        let photoExistante = (index !== "" && !isNaN(index) && produits[index]) ? produits[index].photo : "";
+        enregistrerProduit(designation, photoExistante, prixVente, prixAchat, quantite, index);
+    }
+});
+
+
+    function enregistrerProduit(designation, photo, prixVente, prixAchat, quantite, index) {
+        let produits = JSON.parse(localStorage.getItem("produits")) || [];
+    
+        // Vérifier si l'index est valide
+        if (index !== "" && !isNaN(index) && produits[index]) {
+            // Modification d'un produit existant
+            produits[index] = {
                 designation,
-                photoExistante,
+                photo,
                 prixVente,
                 prixAchat,
                 quantite,
-                index
-            );
+            };
+        } else {
+            // Ajout d'un nouveau produit
+            produits.push({ designation, photo, prixVente, prixAchat, quantite });
         }
-    });
-
-function enregistrerProduit(
-    designation,
-    photo,
-    prixVente,
-    prixAchat,
-    quantite,
-    index
-) {
-    let produits = JSON.parse(localStorage.getItem("produits")) || [];
-
-    if (index !== "") {
-        // Modification d'un produit existant
-        produits[index] = {
-            designation,
-            photo,
-            prixVente,
-            prixAchat,
-            quantite,
-        };
-    } else {
-        // Ajout d'un nouveau produit
-        produits.push({ designation, photo, prixVente, prixAchat, quantite });
+    
+        localStorage.setItem("produits", JSON.stringify(produits));
+        afficherProduits();
+        document.querySelector("#formAjoutProduit").reset();
+        document.querySelector("#produitIndex").value = ""; // Réinitialiser l'index
+        bootstrap.Modal.getInstance(document.querySelector("#modalAjout")).hide();
     }
-
-    localStorage.setItem("produits", JSON.stringify(produits));
-    afficherProduits();
-    document.querySelector("#formAjoutProduit").reset();
-    document.querySelector("#produitIndex").value = ""; // Réinitialiser l'index
-    bootstrap.Modal.getInstance(document.querySelector("#modalAjout")).hide();
-}
+    
 
 function afficherProduits() {
     let produits = JSON.parse(localStorage.getItem("produits")) || [];
