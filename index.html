@@ -47,15 +47,15 @@
                 </div>
                 <div class="mb-3">
                     <label>Prix Vente :</label>
-                    <input type="number" id="prixVente" class="form-control" required>
+                    <input type="text" id="prixVente" class="form-control" required pattern="^\d+([.,]\d{1,2})?$" inputmode="decimal">
                 </div>
                 <div class="mb-3">
                     <label>Prix Achat :</label>
-                    <input type="number" id="prixAchat" class="form-control" required>
+                    <input type="text" id="prixAchat" class="form-control" required pattern="^\d+([.,]\d{1,2})?$" inputmode="decimal">
                 </div>
                 <div class="mb-3">
                     <label>Quantité :</label>
-                    <input type="number" id="quantite" class="form-control" required>
+                    <input type="text" id="quantite" class="form-control" required pattern="^\d+([.,]\d{1,2})?$" inputmode="decimal">
                 </div>
                 <button type="submit" class="btn btn-success">✅ Enregistrer</button>
                 <button type="button" class="btn btn-secondary" onclick="fermerFormulaire()">❌ Annuler</button>
