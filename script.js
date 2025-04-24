@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     afficherProduits();
     document.querySelector("#formProduit").addEventListener("submit", enregistrerProduit);
+    document.querySelector("#date").value = new Date().toISOString().split('T')[0];  // set default date to today
   });
   
   function logout() {
@@ -22,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <td>${produit.prixVente} €</td>
           <td>${produit.prixAchat} €</td>
           <td>${produit.quantite}</td>
+          <td>${produit.date}</td>
           <td>
             <button class="btn btn-warning btn-sm" onclick="modifierProduit(${i})">✏️</button>
             <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${i})">🗑️</button>
@@ -55,6 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
         prixVente: parseFloat(document.querySelector("#prixVente").value),
         prixAchat: parseFloat(document.querySelector("#prixAchat").value),
         quantite: parseInt(document.querySelector("#quantite").value),
+        date: document.querySelector("#date").value, // ajout de la date
         photo: base64img || (index !== "" ? produits[index].photo : "placeholder.jpg")
       };
   
@@ -82,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("#prixVente").value = produit.prixVente;
     document.querySelector("#prixAchat").value = produit.prixAchat;
     document.querySelector("#quantite").value = produit.quantite;
+    document.querySelector("#date").value = produit.date; // mettre à jour la date
     document.querySelector("#produitIndex").value = index;
   
     new bootstrap.Modal(document.getElementById("formModal")).show();
@@ -112,6 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td>${produit.prixVente} €</td>
             <td>${produit.prixAchat} €</td>
             <td>${produit.quantite}</td>
+            <td>${produit.date}</td>
             <td>
               <button class="btn btn-warning btn-sm" onclick="modifierProduit(${i})">✏️</button>
               <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${i})">🗑️</button>
