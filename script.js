@@ -1,10 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
   afficherProduits(); // affiche tous les produits au chargement
 
-  document.querySelector("#formProduit").addEventListener("submit", enregistrerProduit);
+  document
+    .querySelector("#formProduit")
+    .addEventListener("submit", enregistrerProduit);
 
   // Set date d'aujourd'hui par défaut
-  document.querySelector("#date").value = new Date().toISOString().split('T')[0];
+  document.querySelector("#date").value = new Date()
+    .toISOString()
+    .split("T")[0];
 
   // Ajout de debounce sur la recherche
   let timer;
@@ -32,14 +36,22 @@ function afficherProduitsFiltres(produits) {
       <tr>
         <td>${i + 1}</td>
         <td>${p.designation}</td>
-        <td><img src="${p.photo}" width="50" style="cursor:pointer" onclick="afficherImage('${p.photo}')"></td>
+        <td><img src="${
+          p.photo
+        }" width="50" style="cursor:pointer" onclick="afficherImage('${
+      p.photo
+    }')"></td>
         <td>${p.prixVente} €</td>
         <td>${p.prixAchat} €</td>
         <td>${p.quantite}</td>
         <td>${p.date}</td>
         <td>
-          <button class="btn btn-warning btn-sm" onclick="modifierProduit(${p.index})">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${p.index})">🗑️</button>
+          <button class="btn btn-warning btn-sm" onclick="modifierProduit(${
+            p.index
+          })">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${
+            p.index
+          })">🗑️</button>
         </td>
       </tr>
     `;
@@ -60,7 +72,10 @@ function enregistrerProduit(e) {
   let index = document.querySelector("#produitIndex").value;
   let designation = document.querySelector("#designation").value.trim();
 
-  let existe = produits.some((p, i) => p.designation.toLowerCase() === designation.toLowerCase() && i != index);
+  let existe = produits.some(
+    (p, i) =>
+      p.designation.toLowerCase() === designation.toLowerCase() && i != index
+  );
   if (existe) return afficherAlerte("⚠️ Ce produit existe déjà !");
 
   let fichier = document.querySelector("#photo").files[0];
@@ -72,10 +87,11 @@ function enregistrerProduit(e) {
       prixAchat: parseFloat(document.querySelector("#prixAchat").value),
       quantite: parseInt(document.querySelector("#quantite").value),
       date: document.querySelector("#date").value,
-      photo: base64img || (index !== "" ? produits[index].photo : "placeholder.jpg")
+      photo:
+        base64img || (index !== "" ? produits[index].photo : "placeholder.jpg"),
     };
 
-    index === "" ? produits.push(produit) : produits[index] = produit;
+    index === "" ? produits.push(produit) : (produits[index] = produit);
     localStorage.setItem("produits", JSON.stringify(produits));
     bootstrap.Modal.getInstance(document.getElementById("formModal")).hide();
     afficherProduits();
@@ -84,7 +100,7 @@ function enregistrerProduit(e) {
 
   if (fichier) {
     let reader = new FileReader();
-    reader.onload = e => enregistrer(e.target.result);
+    reader.onload = (e) => enregistrer(e.target.result);
     reader.readAsDataURL(fichier);
   } else {
     enregistrer();
@@ -120,7 +136,7 @@ function rechercherProduit() {
 
   const resultats = produits
     .map((produit, i) => ({ ...produit, index: i }))
-    .filter(p => p.designation.toLowerCase().includes(filtre));
+    .filter((p) => p.designation.toLowerCase().includes(filtre));
 
   afficherProduitsFiltres(resultats);
 }
