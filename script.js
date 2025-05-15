@@ -1,17 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
-  afficherProduits(); // affiche tous les produits au chargement
-
+  afficherProduits();
   document.querySelector("#formProduit").addEventListener("submit", enregistrerProduit);
-
-  // Set date d'aujourd'hui par défaut
   document.querySelector("#date").value = new Date().toISOString().split('T')[0];
-
-  // Ajout de debounce sur la recherche
-  let timer;
-  document.querySelector("#searchInput").addEventListener("input", () => {
-    clearTimeout(timer);
-    timer = setTimeout(rechercherProduit, 300); // délai pour ne pas surcharger la fonction
-  });
+  remplirFournisseurs(); // تعمير select ديال fournisseurs
 });
 
 function logout() {
@@ -20,36 +11,34 @@ function logout() {
 }
 
 function afficherProduits() {
-  const produits = JSON.parse(localStorage.getItem("produits")) || [];
-  afficherProduitsFiltres(produits.map((p, i) => ({ ...p, index: i })));
-}
+  let produits = JSON.parse(localStorage.getItem("produits")) || [];
+  let table = document.querySelector("#produitsTable");
+  table.innerHTML = "";
 
-function afficherProduitsFiltres(produits) {
-  const table = document.querySelector("#produitsTable");
-  let html = "";
-  produits.forEach((p, i) => {
-    html += `
+  produits.forEach((produit, i) => {
+    table.innerHTML += `
       <tr>
         <td>${i + 1}</td>
-        <td>${p.designation}</td>
-        <td><img src="${p.photo}" width="50" style="cursor:pointer" onclick="afficherImage('${p.photo}')"></td>
-        <td>${p.prixVente} €</td>
-        <td>${p.prixAchat} €</td>
-        <td>${p.quantite}</td>
-        <td>${p.date}</td>
+        <td>${produit.designation}</td>
+        <td><img src="${produit.photo}" width="50" style="cursor:pointer" onclick="afficherImage('${produit.photo}')"></td>
+        <td>${produit.prixVente} €</td>
+        <td>${produit.prixAchat} €</td>
+        <td>${produit.quantite}</td>
+        <td>${produit.fournisseur || ''}</td>
+        <td>${produit.date}</td>
         <td>
-          <button class="btn btn-warning btn-sm" onclick="modifierProduit(${p.index})">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${p.index})">🗑️</button>
+          <button class="btn btn-warning btn-sm" onclick="modifierProduit(${i})">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${i})">🗑️</button>
         </td>
       </tr>
     `;
   });
-  table.innerHTML = html;
 }
 
 function ouvrirFormulaire() {
   document.querySelector("#formProduit").reset();
   document.querySelector("#produitIndex").value = "";
+  document.querySelector("#date").value = new Date().toISOString().split('T')[0];
   new bootstrap.Modal(document.getElementById("formModal")).show();
 }
 
@@ -59,6 +48,7 @@ function enregistrerProduit(e) {
   let produits = JSON.parse(localStorage.getItem("produits")) || [];
   let index = document.querySelector("#produitIndex").value;
   let designation = document.querySelector("#designation").value.trim();
+  let fournisseur = document.querySelector("#fournisseur").value.trim();
 
   let existe = produits.some((p, i) => p.designation.toLowerCase() === designation.toLowerCase() && i != index);
   if (existe) return afficherAlerte("⚠️ Ce produit existe déjà !");
@@ -72,6 +62,7 @@ function enregistrerProduit(e) {
       prixAchat: parseFloat(document.querySelector("#prixAchat").value),
       quantite: parseInt(document.querySelector("#quantite").value),
       date: document.querySelector("#date").value,
+      fournisseur: fournisseur,
       photo: base64img || (index !== "" ? produits[index].photo : "placeholder.jpg")
     };
 
@@ -80,6 +71,7 @@ function enregistrerProduit(e) {
     bootstrap.Modal.getInstance(document.getElementById("formModal")).hide();
     afficherProduits();
     afficherAlerte("✅ Enregistré avec succès", "success");
+    remplirFournisseurs();
   };
 
   if (fichier) {
@@ -100,6 +92,7 @@ function modifierProduit(index) {
   document.querySelector("#prixAchat").value = produit.prixAchat;
   document.querySelector("#quantite").value = produit.quantite;
   document.querySelector("#date").value = produit.date;
+  document.querySelector("#fournisseur").value = produit.fournisseur || "";
   document.querySelector("#produitIndex").value = index;
 
   new bootstrap.Modal(document.getElementById("formModal")).show();
@@ -112,17 +105,51 @@ function supprimerProduit(index) {
   localStorage.setItem("produits", JSON.stringify(produits));
   afficherProduits();
   afficherAlerte("🗑️ Supprimé avec succès", "danger");
+  remplirFournisseurs();
 }
 
 function rechercherProduit() {
-  const filtre = document.querySelector("#searchInput").value.toLowerCase();
-  const produits = JSON.parse(localStorage.getItem("produits")) || [];
+  let filtreDesignation = document.querySelector("#searchInput").value.toLowerCase();
+  let filtreFournisseur = document.querySelector("#filtreFournisseur").value.toLowerCase();
+  let produits = JSON.parse(localStorage.getItem("produits")) || [];
+  let table = document.querySelector("#produitsTable");
+  table.innerHTML = "";
 
-  const resultats = produits
-    .map((produit, i) => ({ ...produit, index: i }))
-    .filter(p => p.designation.toLowerCase().includes(filtre));
+  produits.forEach((produit, i) => {
+    if (
+      produit.designation.toLowerCase().includes(filtreDesignation) &&
+      (filtreFournisseur === "" || (produit.fournisseur || "").toLowerCase() === filtreFournisseur)
+    ) {
+      table.innerHTML += `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${produit.designation}</td>
+          <td><img src="${produit.photo}" width="50" style="cursor:pointer" onclick="afficherImage('${produit.photo}')"></td>
+          <td>${produit.prixVente} €</td>
+          <td>${produit.prixAchat} €</td>
+          <td>${produit.quantite}</td>
+          <td>${produit.fournisseur || ''}</td>
+          <td>${produit.date}</td>
+          <td>
+            <button class="btn btn-warning btn-sm" onclick="modifierProduit(${i})">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${i})">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }
+  });
+}
 
-  afficherProduitsFiltres(resultats);
+function remplirFournisseurs() {
+  let produits = JSON.parse(localStorage.getItem("produits")) || [];
+  let fournisseurs = [...new Set(produits.map(p => p.fournisseur).filter(f => f))];
+  let select = document.querySelector("#filtreFournisseur");
+  if (!select) return;
+
+  select.innerHTML = `<option value="">🧾 Tous les fournisseurs</option>`;
+  fournisseurs.forEach(f => {
+    select.innerHTML += `<option value="${f}">${f}</option>`;
+  });
 }
 
 function afficherImage(src) {
