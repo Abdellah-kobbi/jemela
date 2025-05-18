@@ -1,109 +1,161 @@
 <!DOCTYPE html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gestion des Produits</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
-  <script>
-    if (localStorage.getItem("utilisateurConnecte") !== "true") {
-      window.location.href = "login.html";
-    }
-  </script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gestion des Produits</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-light">
+    <script>
+      if (localStorage.getItem("utilisateurConnecte") !== "true") {
+        window.location.href = "login.html";
+      }
+    </script>
 
-  <div class="container mt-5">
-    <h2 class="text-center mb-4">Gestion des Produits 🛍️</h2>
+    <div class="container mt-5">
+      <h2 class="text-center mb-4">Gestion des Produits 🛍️</h2>
 
-    <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
-  <div class="d-flex flex-grow-1 gap-2">
-    <input type="text" id="searchInput" class="form-control" placeholder="🔎 Rechercher désignation..." onkeyup="rechercherProduit()">
-    <select id="filtreFournisseur" class="form-select" onchange="rechercherProduit()">
-      <option value="">🧾 Tous les fournisseurs</option>
-    </select>
-  </div>
-  <div class="d-flex gap-2">
-    <button class="btn btn-primary" onclick="ouvrirFormulaire()">➕ Ajouter Produit</button>
-    <button class="btn btn-danger" onclick="logout()">🚪 Déconnexion</button>
-  </div>
-</div>
+      <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+        <div class="d-flex flex-grow-1 gap-2">
+          <input
+            type="text"
+            id="searchInput"
+            class="form-control"
+            placeholder="🔎 Rechercher désignation..."
+          />
+          <select id="filtreFournisseur" class="form-select">
+            <option value="">🧾 Tous les fournisseurs</option>
+          </select>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary" onclick="ouvrirFormulaire()">
+            ➕ Ajouter Produit
+          </button>
+          <button class="btn btn-danger" onclick="logout()">
+            🚪 Déconnexion
+          </button>
+        </div>
+      </div>
 
+      <div id="alerteZone"></div>
 
-    <div id="alerteZone"></div>
+      <table class="table table-striped">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Désignation</th>
+            <th>Photo</th>
+            <th>Prix Vente</th>
+            <th>Prix Achat</th>
+            <th>Quantité</th>
+            <th>Fournisseur</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="produitsTable"></tbody>
+      </table>
 
-    <table class="table table-striped">
-      <thead class="table-dark">
-        <tr>
-          <th>#</th>
-          <th>Désignation</th>
-          <th>Photo</th>
-          <th>Prix Vente</th>
-          <th>Prix Achat</th>
-          <th>Quantité</th>
-          <th>Fournisseur</th>
-          <th>Date</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="produitsTable"></tbody>
-    </table>
-  </div>
+      <!-- Zone pour la pagination -->
+      <div class="d-flex justify-content-center my-3" id="paginationZone"></div>
+    </div>
 
-  <!-- Modal formulaire -->
-  <div class="modal fade" id="formModal" tabindex="-1">
-    <div class="modal-dialog">
-      <div class="modal-content p-3">
-        <h5 class="modal-title">Ajouter un Produit</h5>
-        <form id="formProduit">
-          <input type="hidden" id="produitIndex">
-          <div class="mb-2">
-            <label>Désignation :</label>
-            <input type="text" id="designation" class="form-control" required>
-          </div>
-          <div class="mb-2">
-            <label>Photo :</label>
-            <input type="file" id="photo" class="form-control">
-          </div>
-          <div class="mb-2">
-            <label>Prix Vente :</label>
-            <input type="number" id="prixVente" class="form-control" step="0.01" required>
-          </div>
-          <div class="mb-2">
-            <label>Prix Achat :</label>
-            <input type="number" id="prixAchat" class="form-control" step="0.01" required>
-          </div>
-          <div class="mb-3">
-            <label>Quantité :</label>
-            <input type="number" id="quantite" class="form-control" required>
-          </div>
-          <div class="mb-2">
-            <label>Fournisseur :</label>
-            <input type="text" id="fournisseur" class="form-control" required>
-          </div>
-          <div class="mb-2">
-            <label>Date :</label>
-            <input type="date" id="date" class="form-control" required>
-          </div>
-          <div class="d-flex justify-content-between">
-            <button type="submit" class="btn btn-success">✅ Enregistrer</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Annuler</button>
-          </div>
-        </form>
+    <!-- Modal formulaire -->
+    <div class="modal fade" id="formModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content p-3">
+          <h5 class="modal-title">Ajouter un Produit</h5>
+          <form id="formProduit">
+            <input type="hidden" id="produitIndex" />
+            <div class="mb-2">
+              <label>Désignation :</label>
+              <input
+                type="text"
+                id="designation"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="mb-2">
+              <label>Photo :</label>
+              <input type="file" id="photo" class="form-control" />
+            </div>
+            <div class="mb-2">
+              <label>Prix Vente :</label>
+              <input
+                type="number"
+                id="prixVente"
+                class="form-control"
+                step="0.01"
+                required
+              />
+            </div>
+            <div class="mb-2">
+              <label>Prix Achat :</label>
+              <input
+                type="number"
+                id="prixAchat"
+                class="form-control"
+                step="0.01"
+                required
+              />
+            </div>
+            <div class="mb-2">
+              <label>Quantité :</label>
+              <input
+                type="number"
+                id="quantite"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="mb-2">
+              <label>Fournisseur :</label>
+              <input
+                type="text"
+                id="fournisseur"
+                class="form-control"
+                list="fournisseursList"
+                required
+              />
+              <datalist id="fournisseursList"></datalist>
+            </div>
+
+            <div class="mb-2">
+              <label>Date :</label>
+              <input type="date" id="date" class="form-control" required />
+            </div>
+            <div class="d-flex justify-content-between">
+              <button type="submit" class="btn btn-success">
+                ✅ Enregistrer
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                data-bs-dismiss="modal"
+              >
+                ❌ Annuler
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Modal pour image -->
-  <div class="modal fade" id="imageModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content bg-transparent border-0">
-        <img id="imageAffichee" src="" class="img-fluid rounded shadow">
+    <!-- Modal pour image -->
+    <div class="modal fade" id="imageModal" tabindex="-1">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-transparent border-0">
+          <img id="imageAffichee" src="" class="img-fluid rounded shadow" />
+        </div>
       </div>
     </div>
-  </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="script.js"></script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>
