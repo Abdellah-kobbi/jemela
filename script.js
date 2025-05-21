@@ -60,7 +60,7 @@ function afficherProduits() {
   const filtreFournisseur = document.getElementById("filtreFournisseur").value;
 
   produits = produits.filter(p =>
-    p.designation.toLowerCase().includes(filtreTexte) &&
+    (p.designation || "").toLowerCase().includes(filtreTexte) &&
     (filtreFournisseur === "" || p.fournisseur === filtreFournisseur)
   );
 
@@ -95,8 +95,9 @@ function afficherProduits() {
 function remplirFournisseurs() {
   const produits = JSON.parse(localStorage.getItem("produits")) || [];
   const select = document.getElementById("filtreFournisseur");
-  const liste = [...new Set(produits.map(p => p.fournisseur))];
-  select.innerHTML = `<option value="">🧾 Tous les fournisseurs</option>` + liste.map(f => `<option value="${f}">${f}</option>`).join('');
+  const liste = [...new Set(produits.map(p => p.fournisseur).filter(f => f))];
+  select.innerHTML = `<option value="">🧾 Tous les fournisseurs</option>` + 
+    liste.map(f => `<option value="${f}">${f}</option>`).join('');
 }
 
 function modifierProduit(index) {
