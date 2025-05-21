@@ -1,6 +1,14 @@
 let pageActuelle = 1;
 const PRODUITS_PAR_PAGE = 5;
 
+document.getElementById("searchInput").addEventListener("input", afficherProduits);
+document.getElementById("filtreFournisseur").addEventListener("change", afficherProduits);
+document.getElementById("formProduit").addEventListener("submit", function (e) {
+  e.preventDefault();
+  ajouterProduit();
+  bootstrap.Modal.getInstance(document.getElementById("formModal")).hide();
+});
+
 function ajouterProduit() {
   const designation = document.getElementById("designation").value.trim();
   const prixVente = document.getElementById("prixVente").value.trim();
@@ -31,7 +39,7 @@ function ajouterProduit() {
   if (photoInput.files.length > 0) {
     reader.readAsDataURL(photoInput.files[0]);
   } else {
-    reader.onload({ target: { result: "" } }); // image vide
+    reader.onload({ target: { result: "" } });
   }
 }
 
@@ -48,8 +56,13 @@ function reinitialiserFormulaire() {
 function afficherProduits() {
   let produits = JSON.parse(localStorage.getItem("produits")) || [];
 
-  const filtre = document.getElementById("searchInput").value.toLowerCase();
-  produits = produits.filter(p => p.designation.toLowerCase().includes(filtre));
+  const filtreTexte = document.getElementById("searchInput").value.toLowerCase();
+  const filtreFournisseur = document.getElementById("filtreFournisseur").value;
+
+  produits = produits.filter(p =>
+    p.designation.toLowerCase().includes(filtreTexte) &&
+    (filtreFournisseur === "" || p.fournisseur === filtreFournisseur)
+  );
 
   const totalPages = Math.ceil(produits.length / PRODUITS_PAR_PAGE);
   if (pageActuelle > totalPages) pageActuelle = totalPages || 1;
@@ -58,41 +71,32 @@ function afficherProduits() {
   const produitsPage = produits.slice(debut, debut + PRODUITS_PAR_PAGE);
 
   const table = document.getElementById("produitsTable");
-  table.innerHTML = `
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Désignation</th>
-        <th>Image</th>
-        <th>Prix Vente</th>
-        <th>Prix Achat</th>
-        <th>Quantité</th>
-        <th>Fournisseur</th>
-        <th>Date</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${produitsPage.map((p, i) => `
-        <tr>
-          <td>${debut + i + 1}</td>
-          <td>${p.designation}</td>
-          <td><img src="${p.photo}" width="50" style="cursor:pointer" onclick="afficherImage('${p.photo}')"></td>
-          <td>${p.prixVente}</td>
-          <td>${p.prixAchat}</td>
-          <td>${p.quantite}</td>
-          <td>${p.fournisseur}</td>
-          <td>${p.date}</td>
-          <td>
-            <button class="btn btn-warning btn-sm" onclick="modifierProduit(${debut + i})">✏️</button>
-            <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${debut + i})">🗑️</button>
-          </td>
-        </tr>
-      `).join('')}
-    </tbody>
-  `;
+  table.innerHTML = produitsPage.map((p, i) => `
+    <tr>
+      <td>${debut + i + 1}</td>
+      <td>${p.designation}</td>
+      <td><img src="${p.photo}" width="50" style="cursor:pointer" onclick="afficherImage('${p.photo}')"></td>
+      <td>${p.prixVente}</td>
+      <td>${p.prixAchat}</td>
+      <td>${p.quantite}</td>
+      <td>${p.fournisseur}</td>
+      <td>${p.date}</td>
+      <td>
+        <button class="btn btn-warning btn-sm" onclick="modifierProduit(${debut + i})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${debut + i})">🗑️</button>
+      </td>
+    </tr>
+  `).join("");
 
   genererPagination(totalPages);
+  remplirFournisseurs();
+}
+
+function remplirFournisseurs() {
+  const produits = JSON.parse(localStorage.getItem("produits")) || [];
+  const select = document.getElementById("filtreFournisseur");
+  const liste = [...new Set(produits.map(p => p.fournisseur))];
+  select.innerHTML = `<option value="">🧾 Tous les fournisseurs</option>` + liste.map(f => `<option value="${f}">${f}</option>`).join('');
 }
 
 function modifierProduit(index) {
@@ -109,11 +113,12 @@ function modifierProduit(index) {
   produits.splice(index, 1);
   localStorage.setItem("produits", JSON.stringify(produits));
   afficherProduits();
+
+  new bootstrap.Modal(document.getElementById("formModal")).show();
 }
 
 function supprimerProduit(index) {
   if (!confirm("Voulez-vous supprimer ce produit ?")) return;
-
   const produits = JSON.parse(localStorage.getItem("produits")) || [];
   produits.splice(index, 1);
   localStorage.setItem("produits", JSON.stringify(produits));
@@ -121,8 +126,8 @@ function supprimerProduit(index) {
 }
 
 function afficherImage(src) {
-  const modal = new bootstrap.Modal(document.getElementById('imageModal'));
-  document.getElementById("modalImage").src = src;
+  const modal = new bootstrap.Modal(document.getElementById("imageModal"));
+  document.getElementById("imageAffichee").src = src;
   modal.show();
 }
 
@@ -141,9 +146,7 @@ function genererPagination(totalPages) {
   html += bouton("«", pageActuelle - 1, false, pageActuelle === 1);
 
   if (totalPages <= 5) {
-    for (let i = 1; i <= totalPages; i++) {
-      html += bouton(i, i, i === pageActuelle);
-    }
+    for (let i = 1; i <= totalPages; i++) html += bouton(i, i, i === pageActuelle);
   } else {
     if (pageActuelle > 2) {
       html += bouton(1, 1);
@@ -162,7 +165,6 @@ function genererPagination(totalPages) {
 
   html += bouton("»", pageActuelle + 1, false, pageActuelle === totalPages);
   html += `</ul>`;
-
   zone.innerHTML = html;
 }
 
@@ -172,6 +174,16 @@ function changerPage(page) {
   if (page < 1 || page > totalPages) return;
   pageActuelle = page;
   afficherProduits();
+}
+
+function ouvrirFormulaire() {
+  reinitialiserFormulaire();
+  new bootstrap.Modal(document.getElementById("formModal")).show();
+}
+
+function logout() {
+  localStorage.setItem("utilisateurConnecte", "false");
+  window.location.href = "login.html";
 }
 
 window.onload = afficherProduits;
