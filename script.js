@@ -1,161 +1,177 @@
-document.addEventListener("DOMContentLoaded", () => {
-  afficherProduits();
-  document.querySelector("#formProduit").addEventListener("submit", enregistrerProduit);
-  document.querySelector("#date").value = new Date().toISOString().split("T")[0];
-  remplirFournisseurs();
+let pageActuelle = 1;
+const PRODUITS_PAR_PAGE = 5;
 
-  // Recherche avec debounce
-  let timerRecherche;
-  document.querySelector("#searchInput").addEventListener("input", () => {
-    clearTimeout(timerRecherche);
-    timerRecherche = setTimeout(() => {
-      afficherProduits();
-    }, 300);
-  });
+function ajouterProduit() {
+  const designation = document.getElementById("designation").value.trim();
+  const prixVente = document.getElementById("prixVente").value.trim();
+  const prixAchat = document.getElementById("prixAchat").value.trim();
+  const quantite = document.getElementById("quantite").value.trim();
+  const fournisseur = document.getElementById("fournisseur").value.trim();
+  const date = document.getElementById("date").value;
+  const photoInput = document.getElementById("photo");
 
-  document.querySelector("#filtreFournisseur").addEventListener("change", () => {
+  if (!designation || !prixVente || !prixAchat || !quantite) {
+    alert("Remplissez tous les champs obligatoires.");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    const photo = e.target.result;
+    const produit = { designation, prixVente, prixAchat, quantite, fournisseur, date, photo };
+
+    const produits = JSON.parse(localStorage.getItem("produits")) || [];
+    produits.push(produit);
+    localStorage.setItem("produits", JSON.stringify(produits));
+    pageActuelle = Math.ceil(produits.length / PRODUITS_PAR_PAGE);
     afficherProduits();
-  });
-});
+    reinitialiserFormulaire();
+  };
 
-function logout() {
-  localStorage.removeItem("utilisateurConnecte");
-  window.location.href = "login.html";
+  if (photoInput.files.length > 0) {
+    reader.readAsDataURL(photoInput.files[0]);
+  } else {
+    reader.onload({ target: { result: "" } }); // image vide
+  }
+}
+
+function reinitialiserFormulaire() {
+  document.getElementById("designation").value = "";
+  document.getElementById("prixVente").value = "";
+  document.getElementById("prixAchat").value = "";
+  document.getElementById("quantite").value = "";
+  document.getElementById("fournisseur").value = "";
+  document.getElementById("date").value = "";
+  document.getElementById("photo").value = "";
 }
 
 function afficherProduits() {
   let produits = JSON.parse(localStorage.getItem("produits")) || [];
 
-  const filtreDesignation = document.querySelector("#searchInput").value.toLowerCase();
-  const filtreFournisseur = document.querySelector("#filtreFournisseur").value.toLowerCase();
-  produits = produits.filter(p =>
-    p.designation.toLowerCase().includes(filtreDesignation) &&
-    (filtreFournisseur === "" || (p.fournisseur || "").toLowerCase() === filtreFournisseur)
-  );
+  const filtre = document.getElementById("searchInput").value.toLowerCase();
+  produits = produits.filter(p => p.designation.toLowerCase().includes(filtre));
 
-  let table = document.querySelector("#produitsTable");
-  table.innerHTML = produits.map((produit, i) => `
-    <tr>
-      <td>${i + 1}</td>
-      <td>${produit.designation}</td>
-      <td><img src="${produit.photo}" width="50" style="cursor:pointer" onclick="afficherImage('${produit.photo}')"></td>
-      <td>${produit.prixVente} €</td>
-      <td>${produit.prixAchat} €</td>
-      <td>${produit.quantite}</td>
-      <td>${produit.fournisseur || ''}</td>
-      <td>${produit.date}</td>
-      <td>
-        <button class="btn btn-warning btn-sm" onclick="modifierProduit(${i})">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${i})">🗑️</button>
-      </td>
-    </tr>
-  `).join('');
-}
+  const totalPages = Math.ceil(produits.length / PRODUITS_PAR_PAGE);
+  if (pageActuelle > totalPages) pageActuelle = totalPages || 1;
 
-function ouvrirFormulaire() {
-  document.querySelector("#formProduit").reset();
-  document.querySelector("#produitIndex").value = "";
-  document.querySelector("#date").value = new Date().toISOString().split("T")[0];
-  new bootstrap.Modal(document.getElementById("formModal")).show();
-}
+  const debut = (pageActuelle - 1) * PRODUITS_PAR_PAGE;
+  const produitsPage = produits.slice(debut, debut + PRODUITS_PAR_PAGE);
 
-function enregistrerProduit(e) {
-  e.preventDefault();
+  const table = document.getElementById("produitsTable");
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Désignation</th>
+        <th>Image</th>
+        <th>Prix Vente</th>
+        <th>Prix Achat</th>
+        <th>Quantité</th>
+        <th>Fournisseur</th>
+        <th>Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${produitsPage.map((p, i) => `
+        <tr>
+          <td>${debut + i + 1}</td>
+          <td>${p.designation}</td>
+          <td><img src="${p.photo}" width="50" style="cursor:pointer" onclick="afficherImage('${p.photo}')"></td>
+          <td>${p.prixVente}</td>
+          <td>${p.prixAchat}</td>
+          <td>${p.quantite}</td>
+          <td>${p.fournisseur}</td>
+          <td>${p.date}</td>
+          <td>
+            <button class="btn btn-warning btn-sm" onclick="modifierProduit(${debut + i})">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${debut + i})">🗑️</button>
+          </td>
+        </tr>
+      `).join('')}
+    </tbody>
+  `;
 
-  let produits = JSON.parse(localStorage.getItem("produits")) || [];
-  let index = document.querySelector("#produitIndex").value;
-  let designation = document.querySelector("#designation").value.trim();
-  let fournisseur = document.querySelector("#fournisseur").value.trim();
-
-  let existe = produits.some((p, i) => p.designation.toLowerCase() === designation.toLowerCase() && i != index);
-  if (existe) return afficherAlerte("⚠️ Ce produit existe déjà !");
-
-  let fichier = document.querySelector("#photo").files[0];
-
-  const enregistrer = (base64img) => {
-    let produit = {
-      designation: designation,
-      prixVente: parseFloat(document.querySelector("#prixVente").value),
-      prixAchat: parseFloat(document.querySelector("#prixAchat").value),
-      quantite: parseInt(document.querySelector("#quantite").value),
-      date: document.querySelector("#date").value,
-      fournisseur: fournisseur,
-      photo: base64img || (index !== "" ? produits[index].photo : "placeholder.jpg")
-    };
-
-    index === "" ? produits.push(produit) : produits[index] = produit;
-    localStorage.setItem("produits", JSON.stringify(produits));
-    bootstrap.Modal.getInstance(document.getElementById("formModal")).hide();
-    afficherProduits();
-    afficherAlerte("✅ Enregistré avec succès", "success");
-    remplirFournisseurs();
-  };
-
-  if (fichier) {
-    let reader = new FileReader();
-    reader.onload = e => enregistrer(e.target.result);
-    reader.readAsDataURL(fichier);
-  } else {
-    enregistrer();
-  }
+  genererPagination(totalPages);
 }
 
 function modifierProduit(index) {
-  let produits = JSON.parse(localStorage.getItem("produits")) || [];
-  let produit = produits[index];
+  const produits = JSON.parse(localStorage.getItem("produits")) || [];
+  const p = produits[index];
 
-  document.querySelector("#designation").value = produit.designation;
-  document.querySelector("#prixVente").value = produit.prixVente;
-  document.querySelector("#prixAchat").value = produit.prixAchat;
-  document.querySelector("#quantite").value = produit.quantite;
-  document.querySelector("#date").value = produit.date;
-  document.querySelector("#fournisseur").value = produit.fournisseur || "";
-  document.querySelector("#produitIndex").value = index;
+  document.getElementById("designation").value = p.designation;
+  document.getElementById("prixVente").value = p.prixVente;
+  document.getElementById("prixAchat").value = p.prixAchat;
+  document.getElementById("quantite").value = p.quantite;
+  document.getElementById("fournisseur").value = p.fournisseur;
+  document.getElementById("date").value = p.date;
 
-  new bootstrap.Modal(document.getElementById("formModal")).show();
-}
-
-function supprimerProduit(index) {
-  if (!confirm("Supprimer ce produit ?")) return;
-  let produits = JSON.parse(localStorage.getItem("produits")) || [];
   produits.splice(index, 1);
   localStorage.setItem("produits", JSON.stringify(produits));
   afficherProduits();
-  afficherAlerte("🗑️ Supprimé avec succès", "danger");
-  remplirFournisseurs();
 }
 
-function remplirFournisseurs() {
-  let produits = JSON.parse(localStorage.getItem("produits")) || [];
-  let fournisseurs = [...new Set(produits.map(p => p.fournisseur).filter(f => f))];
+function supprimerProduit(index) {
+  if (!confirm("Voulez-vous supprimer ce produit ?")) return;
 
-  let select = document.querySelector("#filtreFournisseur");
-  if (select) {
-    select.innerHTML = `<option value="">🧾 Tous les fournisseurs</option>`;
-    fournisseurs.forEach(f => {
-      select.innerHTML += `<option value="${f}">${f}</option>`;
-    });
-  }
-
-  let datalist = document.querySelector("#fournisseursList");
-  if (datalist) {
-    datalist.innerHTML = "";
-    fournisseurs.forEach(f => {
-      datalist.innerHTML += `<option value="${f}">`;
-    });
-  }
+  const produits = JSON.parse(localStorage.getItem("produits")) || [];
+  produits.splice(index, 1);
+  localStorage.setItem("produits", JSON.stringify(produits));
+  afficherProduits();
 }
 
 function afficherImage(src) {
-  document.getElementById("imageAffichee").src = src;
-  new bootstrap.Modal(document.getElementById("imageModal")).show();
+  const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+  document.getElementById("modalImage").src = src;
+  modal.show();
 }
 
-function afficherAlerte(message, type = "warning") {
-  document.getElementById("alerteZone").innerHTML = `
-    <div class="alert alert-${type} alert-dismissible fade show mt-3" role="alert">
-      ${message}
-      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-  `;
+function genererPagination(totalPages) {
+  const zone = document.getElementById("paginationZone");
+  zone.innerHTML = "";
+
+  if (totalPages <= 1) return;
+
+  const bouton = (label, page, active = false, disabled = false) => `
+    <li class="page-item ${active ? "active" : ""} ${disabled ? "disabled" : ""}">
+      <a class="page-link" href="#" onclick="changerPage(${page}); return false;">${label}</a>
+    </li>`;
+
+  let html = `<ul class="pagination">`;
+  html += bouton("«", pageActuelle - 1, false, pageActuelle === 1);
+
+  if (totalPages <= 5) {
+    for (let i = 1; i <= totalPages; i++) {
+      html += bouton(i, i, i === pageActuelle);
+    }
+  } else {
+    if (pageActuelle > 2) {
+      html += bouton(1, 1);
+      if (pageActuelle > 3) html += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+    }
+
+    for (let i = Math.max(1, pageActuelle - 1); i <= Math.min(totalPages, pageActuelle + 1); i++) {
+      html += bouton(i, i, i === pageActuelle);
+    }
+
+    if (pageActuelle < totalPages - 1) {
+      if (pageActuelle < totalPages - 2) html += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
+      html += bouton(totalPages, totalPages);
+    }
+  }
+
+  html += bouton("»", pageActuelle + 1, false, pageActuelle === totalPages);
+  html += `</ul>`;
+
+  zone.innerHTML = html;
 }
+
+function changerPage(page) {
+  const produits = JSON.parse(localStorage.getItem("produits")) || [];
+  const totalPages = Math.ceil(produits.length / PRODUITS_PAR_PAGE);
+  if (page < 1 || page > totalPages) return;
+  pageActuelle = page;
+  afficherProduits();
+}
+
+window.onload = afficherProduits;
