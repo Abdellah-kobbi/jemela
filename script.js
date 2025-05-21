@@ -1,11 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   afficherProduits();
-  document
-    .querySelector("#formProduit")
-    .addEventListener("submit", enregistrerProduit);
-  document.querySelector("#date").value = new Date()
-    .toISOString()
-    .split("T")[0];
+  document.querySelector("#formProduit").addEventListener("submit", enregistrerProduit);
+  document.querySelector("#date").value = new Date().toISOString().split("T")[0];
   remplirFournisseurs();
 
   // Recherche avec debounce
@@ -17,11 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 300);
   });
 
-  document
-    .querySelector("#filtreFournisseur")
-    .addEventListener("change", () => {
-      afficherProduits();
-    });
+  document.querySelector("#filtreFournisseur").addEventListener("change", () => {
+    afficherProduits();
+  });
 });
 
 function logout() {
@@ -32,52 +26,36 @@ function logout() {
 function afficherProduits() {
   let produits = JSON.parse(localStorage.getItem("produits")) || [];
 
-  const filtreDesignation = document
-    .querySelector("#searchInput")
-    .value.toLowerCase();
-  const filtreFournisseur = document
-    .querySelector("#filtreFournisseur")
-    .value.toLowerCase();
-  produits = produits.filter(
-    (p) =>
-      p.designation.toLowerCase().includes(filtreDesignation) &&
-      (filtreFournisseur === "" ||
-        (p.fournisseur || "").toLowerCase() === filtreFournisseur)
+  const filtreDesignation = document.querySelector("#searchInput").value.toLowerCase();
+  const filtreFournisseur = document.querySelector("#filtreFournisseur").value.toLowerCase();
+  produits = produits.filter(p =>
+    p.designation.toLowerCase().includes(filtreDesignation) &&
+    (filtreFournisseur === "" || (p.fournisseur || "").toLowerCase() === filtreFournisseur)
   );
 
   let table = document.querySelector("#produitsTable");
-  table.innerHTML = produits
-    .map(
-      (produit, i) => `
+  table.innerHTML = produits.map((produit, i) => `
     <tr>
       <td>${i + 1}</td>
       <td>${produit.designation}</td>
-      <td><img src="${
-        produit.photo
-      }" width="50" style="cursor:pointer" onclick="afficherImage('${
-        produit.photo
-      }')"></td>
+      <td><img src="${produit.photo}" width="50" style="cursor:pointer" onclick="afficherImage('${produit.photo}')"></td>
       <td>${produit.prixVente} €</td>
       <td>${produit.prixAchat} €</td>
       <td>${produit.quantite}</td>
-      <td>${produit.fournisseur || ""}</td>
+      <td>${produit.fournisseur || ''}</td>
       <td>${produit.date}</td>
       <td>
         <button class="btn btn-warning btn-sm" onclick="modifierProduit(${i})">✏️</button>
         <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${i})">🗑️</button>
       </td>
     </tr>
-  `
-    )
-    .join("");
+  `).join('');
 }
 
 function ouvrirFormulaire() {
   document.querySelector("#formProduit").reset();
   document.querySelector("#produitIndex").value = "";
-  document.querySelector("#date").value = new Date()
-    .toISOString()
-    .split("T")[0];
+  document.querySelector("#date").value = new Date().toISOString().split("T")[0];
   new bootstrap.Modal(document.getElementById("formModal")).show();
 }
 
@@ -89,10 +67,7 @@ function enregistrerProduit(e) {
   let designation = document.querySelector("#designation").value.trim();
   let fournisseur = document.querySelector("#fournisseur").value.trim();
 
-  let existe = produits.some(
-    (p, i) =>
-      p.designation.toLowerCase() === designation.toLowerCase() && i != index
-  );
+  let existe = produits.some((p, i) => p.designation.toLowerCase() === designation.toLowerCase() && i != index);
   if (existe) return afficherAlerte("⚠️ Ce produit existe déjà !");
 
   let fichier = document.querySelector("#photo").files[0];
@@ -105,11 +80,10 @@ function enregistrerProduit(e) {
       quantite: parseInt(document.querySelector("#quantite").value),
       date: document.querySelector("#date").value,
       fournisseur: fournisseur,
-      photo:
-        base64img || (index !== "" ? produits[index].photo : "placeholder.jpg"),
+      photo: base64img || (index !== "" ? produits[index].photo : "placeholder.jpg")
     };
 
-    index === "" ? produits.push(produit) : (produits[index] = produit);
+    index === "" ? produits.push(produit) : produits[index] = produit;
     localStorage.setItem("produits", JSON.stringify(produits));
     bootstrap.Modal.getInstance(document.getElementById("formModal")).hide();
     afficherProduits();
@@ -119,7 +93,7 @@ function enregistrerProduit(e) {
 
   if (fichier) {
     let reader = new FileReader();
-    reader.onload = (e) => enregistrer(e.target.result);
+    reader.onload = e => enregistrer(e.target.result);
     reader.readAsDataURL(fichier);
   } else {
     enregistrer();
@@ -153,14 +127,12 @@ function supprimerProduit(index) {
 
 function remplirFournisseurs() {
   let produits = JSON.parse(localStorage.getItem("produits")) || [];
-  let fournisseurs = [
-    ...new Set(produits.map((p) => p.fournisseur).filter((f) => f)),
-  ];
+  let fournisseurs = [...new Set(produits.map(p => p.fournisseur).filter(f => f))];
 
   let select = document.querySelector("#filtreFournisseur");
   if (select) {
     select.innerHTML = `<option value="">🧾 Tous les fournisseurs</option>`;
-    fournisseurs.forEach((f) => {
+    fournisseurs.forEach(f => {
       select.innerHTML += `<option value="${f}">${f}</option>`;
     });
   }
@@ -168,7 +140,7 @@ function remplirFournisseurs() {
   let datalist = document.querySelector("#fournisseursList");
   if (datalist) {
     datalist.innerHTML = "";
-    fournisseurs.forEach((f) => {
+    fournisseurs.forEach(f => {
       datalist.innerHTML += `<option value="${f}">`;
     });
   }
