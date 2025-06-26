@@ -1,6 +1,3 @@
-let pageActuelle = 1;
-const PRODUITS_PAR_PAGE = 5;
-
 document.getElementById("searchInput").addEventListener("input", afficherProduits);
 document.getElementById("filtreFournisseur").addEventListener("change", afficherProduits);
 document.getElementById("formProduit").addEventListener("submit", function (e) {
@@ -31,7 +28,6 @@ function ajouterProduit() {
     const produits = JSON.parse(localStorage.getItem("produits")) || [];
     produits.push(produit);
     localStorage.setItem("produits", JSON.stringify(produits));
-    pageActuelle = Math.ceil(produits.length / PRODUITS_PAR_PAGE);
     afficherProduits();
     reinitialiserFormulaire();
   };
@@ -64,16 +60,10 @@ function afficherProduits() {
     (filtreFournisseur === "" || p.fournisseur === filtreFournisseur)
   );
 
-  const totalPages = Math.ceil(produits.length / PRODUITS_PAR_PAGE);
-  if (pageActuelle > totalPages) pageActuelle = totalPages || 1;
-
-  const debut = (pageActuelle - 1) * PRODUITS_PAR_PAGE;
-  const produitsPage = produits.slice(debut, debut + PRODUITS_PAR_PAGE);
-
   const table = document.getElementById("produitsTable");
-  table.innerHTML = produitsPage.map((p, i) => `
+  table.innerHTML = produits.map((p, i) => `
     <tr>
-      <td>${debut + i + 1}</td>
+      <td>${i + 1}</td>
       <td>${p.designation}</td>
       <td><img src="${p.photo}" width="50" style="cursor:pointer" onclick="afficherImage('${p.photo}')"></td>
       <td>${p.prixVente}</td>
@@ -82,13 +72,12 @@ function afficherProduits() {
       <td>${p.fournisseur}</td>
       <td>${p.date}</td>
       <td>
-        <button class="btn btn-warning btn-sm" onclick="modifierProduit(${debut + i})">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${debut + i})">🗑️</button>
+        <button class="btn btn-warning btn-sm" onclick="modifierProduit(${i})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${i})">🗑️</button>
       </td>
     </tr>
   `).join("");
 
-  genererPagination(totalPages);
   remplirFournisseurs();
 }
 
@@ -130,51 +119,6 @@ function afficherImage(src) {
   const modal = new bootstrap.Modal(document.getElementById("imageModal"));
   document.getElementById("imageAffichee").src = src;
   modal.show();
-}
-
-function genererPagination(totalPages) {
-  const zone = document.getElementById("paginationZone");
-  zone.innerHTML = "";
-
-  if (totalPages <= 1) return;
-
-  const bouton = (label, page, active = false, disabled = false) => `
-    <li class="page-item ${active ? "active" : ""} ${disabled ? "disabled" : ""}">
-      <a class="page-link" href="#" onclick="changerPage(${page}); return false;">${label}</a>
-    </li>`;
-
-  let html = `<ul class="pagination">`;
-  html += bouton("«", pageActuelle - 1, false, pageActuelle === 1);
-
-  if (totalPages <= 5) {
-    for (let i = 1; i <= totalPages; i++) html += bouton(i, i, i === pageActuelle);
-  } else {
-    if (pageActuelle > 2) {
-      html += bouton(1, 1);
-      if (pageActuelle > 3) html += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
-    }
-
-    for (let i = Math.max(1, pageActuelle - 1); i <= Math.min(totalPages, pageActuelle + 1); i++) {
-      html += bouton(i, i, i === pageActuelle);
-    }
-
-    if (pageActuelle < totalPages - 1) {
-      if (pageActuelle < totalPages - 2) html += `<li class="page-item disabled"><span class="page-link">…</span></li>`;
-      html += bouton(totalPages, totalPages);
-    }
-  }
-
-  html += bouton("»", pageActuelle + 1, false, pageActuelle === totalPages);
-  html += `</ul>`;
-  zone.innerHTML = html;
-}
-
-function changerPage(page) {
-  const produits = JSON.parse(localStorage.getItem("produits")) || [];
-  const totalPages = Math.ceil(produits.length / PRODUITS_PAR_PAGE);
-  if (page < 1 || page > totalPages) return;
-  pageActuelle = page;
-  afficherProduits();
 }
 
 function ouvrirFormulaire() {
