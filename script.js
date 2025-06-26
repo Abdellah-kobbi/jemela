@@ -14,19 +14,34 @@ function ajouterProduit() {
   const fournisseur = document.getElementById("fournisseur").value.trim();
   const date = document.getElementById("date").value;
   const photoInput = document.getElementById("photo");
+  const index = document.getElementById("produitIndex").value;
 
   if (!designation || !prixVente || !prixAchat || !quantite) {
-    alert("Remplissez tous les champs obligatoires.");
+    alert("عافاك عَمّر جميع الخانات المطلوبة.");
     return;
   }
 
   const reader = new FileReader();
   reader.onload = function (e) {
-    const photo = e.target.result;
-    const produit = { designation, prixVente, prixAchat, quantite, fournisseur, date, photo };
-
     const produits = JSON.parse(localStorage.getItem("produits")) || [];
-    produits.push(produit);
+    const produit = {
+      designation,
+      prixVente,
+      prixAchat,
+      quantite,
+      fournisseur,
+      date,
+      photo: e.target.result
+    };
+
+    if (index) {
+      // إذا المستخدم مبدلش الصورة، نخليو القديمة
+      produit.photo = e.target.result || produits[index].photo;
+      produits[index] = produit;
+    } else {
+      produits.push(produit);
+    }
+
     localStorage.setItem("produits", JSON.stringify(produits));
     afficherProduits();
     reinitialiserFormulaire();
@@ -35,7 +50,13 @@ function ajouterProduit() {
   if (photoInput.files.length > 0) {
     reader.readAsDataURL(photoInput.files[0]);
   } else {
-    reader.onload({ target: { result: "" } });
+    // إذا ماحطش صورة جديدة، نخلي القديمة ولا نخلي الصورة فارغة للإضافة
+    if (index) {
+      const produits = JSON.parse(localStorage.getItem("produits")) || [];
+      reader.onload({ target: { result: produits[index].photo } });
+    } else {
+      reader.onload({ target: { result: "" } });
+    }
   }
 }
 
@@ -47,6 +68,7 @@ function reinitialiserFormulaire() {
   document.getElementById("fournisseur").value = "";
   document.getElementById("date").value = "";
   document.getElementById("photo").value = "";
+  document.getElementById("produitIndex").value = "";
 }
 
 function afficherProduits() {
@@ -99,16 +121,13 @@ function modifierProduit(index) {
   document.getElementById("quantite").value = p.quantite;
   document.getElementById("fournisseur").value = p.fournisseur;
   document.getElementById("date").value = p.date;
-
-  produits.splice(index, 1);
-  localStorage.setItem("produits", JSON.stringify(produits));
-  afficherProduits();
+  document.getElementById("produitIndex").value = index;
 
   new bootstrap.Modal(document.getElementById("formModal")).show();
 }
 
 function supprimerProduit(index) {
-  if (!confirm("Voulez-vous supprimer ce produit ?")) return;
+  if (!confirm("واش متأكد بغيتي تحيد هاد المنتج؟")) return;
   const produits = JSON.parse(localStorage.getItem("produits")) || [];
   produits.splice(index, 1);
   localStorage.setItem("produits", JSON.stringify(produits));
