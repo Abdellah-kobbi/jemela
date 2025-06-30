@@ -72,20 +72,22 @@ function reinitialiserFormulaire() {
 }
 
 function afficherProduits() {
-  let produits = JSON.parse(localStorage.getItem("produits")) || [];
+  const tousProduits = JSON.parse(localStorage.getItem("produits")) || [];
 
   const filtreTexte = document.getElementById("searchInput").value.toLowerCase();
   const filtreFournisseur = document.getElementById("filtreFournisseur").value;
 
-  produits = produits.filter(p =>
-    (p.designation || "").toLowerCase().includes(filtreTexte) &&
-    (filtreFournisseur === "" || p.fournisseur === filtreFournisseur)
-  );
+  const produitsFiltres = tousProduits
+    .map((p, i) => ({ ...p, indexOriginal: i })) // نحافظو على الفهرس الأصلي
+    .filter(p =>
+      (p.designation || "").toLowerCase().includes(filtreTexte) &&
+      (filtreFournisseur === "" || p.fournisseur === filtreFournisseur)
+    );
 
   const table = document.getElementById("produitsTable");
-  table.innerHTML = produits.map((p, i) => `
+  table.innerHTML = produitsFiltres.map(p => `
     <tr>
-      <td>${i + 1}</td>
+      <td>${p.indexOriginal + 1}</td>
       <td>${p.designation}</td>
       <td><img src="${p.photo}" width="50" style="cursor:pointer" onclick="afficherImage('${p.photo}')"></td>
       <td>${p.prixVente}</td>
@@ -94,14 +96,15 @@ function afficherProduits() {
       <td>${p.fournisseur}</td>
       <td>${p.date}</td>
       <td>
-        <button class="btn btn-warning btn-sm" onclick="modifierProduit(${i})">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${i})">🗑️</button>
+        <button class="btn btn-warning btn-sm" onclick="modifierProduit(${p.indexOriginal})">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="supprimerProduit(${p.indexOriginal})">🗑️</button>
       </td>
     </tr>
   `).join("");
 
   remplirFournisseurs();
 }
+
 
 function remplirFournisseurs() {
   const produits = JSON.parse(localStorage.getItem("produits")) || [];
