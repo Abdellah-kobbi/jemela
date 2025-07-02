@@ -78,11 +78,14 @@ function afficherProduits() {
   const filtreFournisseur = document.getElementById("filtreFournisseur").value;
 
   const produitsFiltres = tousProduits
-    .map((p, i) => ({ ...p, indexOriginal: i })) // نحافظو على الفهرس الأصلي
-    .filter(p =>
-      (p.designation || "").toLowerCase().includes(filtreTexte) &&
-      (filtreFournisseur === "" || p.fournisseur === filtreFournisseur)
-    );
+    .map((p, i) => ({ ...p, indexOriginal: i })) 
+    .filter(p => {
+      const idProduit = (p.indexOriginal + 1).toString();
+      return (
+        idProduit.includes(filtreTexte) || 
+        (p.designation || "").toLowerCase().includes(filtreTexte)
+      ) && (filtreFournisseur === "" || p.fournisseur === filtreFournisseur);
+    });
 
   const table = document.getElementById("produitsTable");
   table.innerHTML = produitsFiltres.map(p => `
@@ -104,6 +107,7 @@ function afficherProduits() {
 
   remplirFournisseurs();
 }
+
 
 
 function remplirFournisseurs() {
